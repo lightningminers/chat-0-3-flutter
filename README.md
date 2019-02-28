@@ -41,3 +41,112 @@ Flutter 第一个版本代号叫“Sky” 被运行在 Android 系统上，于 2
 - 生态方面会有一定的补充
 - 大厂应该会有限度的跟进，毕竟改造原有的基础设施也需要一段时间
 - 中国大陆多数公司还是会持观望态度，或者有限跟进试验（考虑到中国大陆的多数基础设施，比如接微信SDK，leancloud SDK 等等）
+
+## 环境搭建和 Widget 基础
+
+下载 [https://flutter.dev/docs/get-started/install/macos](https://flutter.dev/docs/get-started/install/macos) Flutter SDK 解压后将 flutter 添加到你的环境Path中。
+
+```bash
+export PATH="$HOME/flutter/bin:$PATH"
+```
+
+运行 `flutter doctor` 命令查看一下依赖环境：
+
+```
+Doctor summary (to see all details, run flutter doctor -v):
+[✓] Flutter (Channel stable, v1.2.1, on Mac OS X 10.14.3 18D109, locale
+    zh-Hans-CN)
+[✓] Android toolchain - develop for Android devices (Android SDK version 28.0.3)
+[✓] iOS toolchain - develop for iOS devices (Xcode 10.1)
+[✓] Android Studio (version 3.2)
+[✓] VS Code (version 1.31.1)
+[!] Connected device
+    ! No devices available
+! Doctor found issues in 1 category.
+```
+
+> 我的建议是先安装 Xcode 在 iOS 上进行开发，因为 Android SDK Android Studio 要翻墙，等最终要发布时再安装 Android 的环境。
+
+运行 `flutter create my_flutter_app` 创建一个 Flutter 工程
+
+> 在运行 Flutter 工程之前，需要先把 iOS Simulator 启动起来。
+
+最后运行 `flutter run` 将工程运行到 iOS Simulator：
+
+![](./assets/flutter-01.png)
+
+如果你实在不是很清楚这些命令行有什么用，这时还可以输入如下命令来查看：
+
+```bash
+$ flutter run -h
+```
+
+如果有一天 Flutter 升级了版本，你可以通过如下命令进行升级并查看依赖环境：
+
+```bash
+$ flutter upgrade
+$ flutter doctor  
+```
+
+在 Flutter 的世界里一切都是 `Widget` 并且提供了两个非常基础有用的 Widget（StatelessWidget 和 StatefulWidget），对于 StatelessWidget 来说我们只需要重载 build 方法即可，而 StatefulWidget 则需要和 State 配合着使用，它的设计原则非常有趣，对于 React 开发者来说几乎可以无缝切换，先让我们来从头实现一个 StatelessWidget 来一窥其内部的工作情况：
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class FlutterBookElement extends ComponentElement {
+  FlutterBookElement(FlutterBooklessWidget widget): super(widget);
+
+  @override
+  FlutterBooklessWidget get widget => super.widget;
+
+  @override
+  Widget build() => widget.build(this);
+
+  @override
+  void update(FlutterBooklessWidget newWidget){
+    super.update(newWidget);
+    rebuild();
+  }
+}
+
+abstract class FlutterBooklessWidget extends Widget {
+  const FlutterBooklessWidget({Key key}):super(key: key);
+
+  @override
+  FlutterBookElement createElement() => new FlutterBookElement(this);
+
+  @protected
+  Widget build(BuildContext context);
+}
+
+class MyApp extends FlutterBooklessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new Text('Flutter Demo Home Page')
+    );
+  }
+}
+```
+
+不管是 StatelessWidget 还是 StatefulWidget 都继承于 Widget 这个类，当我们一直往前追寻时都能发现这些定义都是抽象类，这也意味着它们都需要被继承之后才能实现（约定的一些属性或方法），最后我们看一看 runApp 做了什么事情？
+
+```dart
+void runApp(Widget app) {
+  WidgetsFlutterBinding.ensureInitialized()
+    ..attachRootWidget(app)
+    ..scheduleWarmUpFrame();
+}
+```
+
+通过这个方法传入MyApp对象 ，由此接管，我们想象一下这样的设计，是不是和 react react-dom 非常像？
+
+## 生命周期详解和平台特性
+
