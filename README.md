@@ -36,7 +36,7 @@ Flutter 第一个版本代号叫 `Sky` 被运行在 Android 系统上，于 2015
 
 ![](./assets/zhihu-flutter.png)
 
-[https://toutiao.io/search?utf8=%E2%9C%93&q=flutter](https://toutiao.io/search?utf8=%E2%9C%93&q=flutter)
+开发者头条：[https://toutiao.io/search?utf8=%E2%9C%93&q=flutter](https://toutiao.io/search?utf8=%E2%9C%93&q=flutter)
 
 根据 Google I/O 公开数据的引用：
 
@@ -266,3 +266,133 @@ class AVCycleLessState extends State<AVCycleLess> with WidgetsBindingObserver {
   }
 }
 ```
+
+## 处理异步的几种方式
+
+由于 Dart 和 JavaScript 非常类似，也属于一种单线程模型的编程语言，因此我们不得不要关注到异步处理的情况，这一小节将着重描述关于 Dart 世界中异步处理的几种方式，先让我们来看一看 Future：
+
+> 异步处理的方法都在 dart:async 中，必须要导入。
+
+### Future
+
+Future 可以允许我们注册回调函数来处理计算返回值或者异常，基本上可以说这是 Dart 关于异步处理的基础。
+
+创建一个简单的 Future：
+
+```dart
+new Future((){
+  return 'icepy';
+}).then((data) {
+  print(data);
+});
+```
+
+创建一个理解返回的 Future：
+
+```dart
+Future.value('123').then((data){
+  print(data);
+});
+```
+
+如何在 Future 中处理异常：
+
+```dart
+new Future((){
+  throw Exception('第一个异常');
+}).then((data){
+  return 12;
+}, onError: (e){
+  print('第一个onError e=$e');
+}).then((s){
+  throw Exception("第二个异常:$s");
+}).catchError((e) {
+  print("catch ${e}");
+});
+```
+
+如何将多个异步函数的返回汇总：
+
+```dart
+Future<int> a() async{
+  return 1;
+}
+
+Future<int> b() async{
+  return 2;
+}
+
+Future<int> c() async{
+  return 3;
+}
+
+Future.wait([a(),b(),c()]).then((data) {
+  print(data);
+}).catchError((error){
+  print(error);
+});
+```
+
+`wait` 函数可以等待多个异步函数执行之后将数据汇总抛给 then ，但如果其中有一个函数抛错，那么将立即进入 catchError 流程。Future API 提供了非常丰富的构造函数，大家可以着重学习一下。
+
+### async/await
+
+Future 非常适合处理单次的异步任务，当任务次数多起来之后，明显对于程序来说会有一些阅读障碍，因此我们需要使用 async/await 来处理这个问题。
+
+> async 函数可以随处调用，它将返回一个 Future,await 只能在 async 函数中使用。
+
+```dart
+Future<int> a() async{
+  return 1
+}
+
+a().then((data){
+  // data = 1
+});
+```
+
+至于 await 的使用，只要在 async 函数中即可：
+
+```dart
+Future<int> d() async{
+  final n = await Future.value(123).then((data){
+    return data;
+  });
+  return n;
+}
+
+void main(){
+  d().then((data){
+    print(data);
+  });
+}
+```
+
+### Stream
+
+关于 Stream 你可以理解为利用 `事件` 的方式来驱动异步流程的处理，如果你有兴趣的话可以认真阅读：[https://github.com/icepy/flutter-book/blob/master/doc/upday/stream.md](https://github.com/icepy/flutter-book/blob/master/doc/upday/stream.md)，这里不再复述。
+
+### Generator
+
+关于 Generator 我们可以将其理解为一系列等待执行的序列，在 Dart 中，我们可以使用 `sync*` 和 `async*` 来实现自己的 Generator。
+
+同步 Generator 函数返回的是 Iterable：
+
+```dart
+Iterable<int> naturalsTo(int n) sync* {
+  int k = 0;
+  while (k < n) yield k++;
+}
+```
+
+异步 Generator 函数返回的是 Stream：
+
+```dart
+Stream<int> asynchronousNaturalsTo(int n) async* {
+  int k = 0;
+  while (k < n) yield k++;
+}
+```
+
+由于 Stream 在另外一篇文章中有详解，因此关于 Iterable 补充一下，迭代器可以按顺序访问的方式来获取其中的值，我们可以通过`moveNext` 来完成，如果调用返回的是 true 则说明迭代器已经移动到了一下个元素，你可以使用 current 属性来获取。如果你的 Generator 是用于递归的，那么可以使用 yield* 来提高性能。
+
