@@ -396,3 +396,81 @@ Stream<int> asynchronousNaturalsTo(int n) async* {
 
 由于 Stream 在另外一篇文章中有详解，因此关于 Iterable 补充一下，迭代器可以按顺序访问的方式来获取其中的值，我们可以通过`moveNext` 来完成，如果调用返回的是 true 则说明迭代器已经移动到了一下个元素，你可以使用 current 属性来获取。如果你的 Generator 是用于递归的，那么可以使用 yield* 来提高性能。
 
+## 如何开发与发布一个 Package
+
+以 [DayDart](https://github.com/icepy/flutter_daydart) 为例子讲解一下如何开发和发布一个 Package，首先我们需要利用 flutter 命令行工具创建一个 Package：
+
+```bash
+$ flutter create --template=package flutter_daydart
+```
+
+在实现的过程中我定义了一个 `library daydart` export 出了具体实现的文件 DayDart.dart，当你开发完成这些工作时，最后的环节是修改 `pubspec.yaml` 文件，如：
+
+```yaml
+name: flutter_daydart
+description: 具备 Moment.js 一样 API 的时间处理库.
+version: 0.0.3
+author: icepy<xiangwenwe@gmail.com>
+homepage: https://github.com/icepy/flutter_daydart
+repository: https://github.com/icepy/flutter_daydart
+environment:
+  sdk: ">=2.0.0-dev.68.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+# For information on the generic Dart part of this file, see the
+# following page: https://www.dartlang.org/tools/pub/pubspec
+
+# The following section is specific to Flutter.
+flutter:
+
+  # To add assets to your package, add an assets section, like this:
+  # assets:
+  #  - images/a_dot_burr.jpeg
+  #  - images/a_dot_ham.jpeg
+  #
+  # For details regarding assets in packages, see
+  # https://flutter.io/assets-and-images/#from-packages
+  #
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.io/assets-and-images/#resolution-aware.
+
+  # To add custom fonts to your package, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts in packages, see
+  # https://flutter.io/custom-fonts/#from-packages
+```
+
+提交：
+
+```bash
+$ sudo flutter packages pub publish
+```
+
+如果你是第一次发布，在终端上会给你一个 URL 地址，复制这个地址在浏览器中打开，（这几步包括上传都需要翻墙）会跳转到 Google OAuth2 登录授权的流程，授权成功之后，终端上就可以继续上传了。
+
+> 建议：在开发的过程中，可以利用 flutter test 命令来进行测试
+
+## 何谓 Bloc 又如何设计好 Bloc
+
