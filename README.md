@@ -474,3 +474,60 @@ $ sudo flutter packages pub publish
 
 ## 何谓 Bloc 又如何设计好 Bloc
 
+这是一种设计模式，由 paolo soares 和 cong hui 在2018年Google dartconf上提出，具体可参看 [https://www.youtube.com/watch?v=PLHln7wHgPE](https://www.youtube.com/watch?v=PLHln7wHgPE)，Bloc 是英文 Business Logic Component 的缩写，基本从字面的意思上来看，它是一种面向组件和业务逻辑的分离的优雅策略，通常我习惯性的将设计模式称之为一种策略。它利用了 Stream 的特性，为大量业务逻辑的分离提供了优雅的策略。
+
+![](./assets/flutter-69.png)
+
+> 建议大家先行阅读 [https://github.com/icepy/flutter-book/blob/master/doc/upday/bloc.md](https://github.com/icepy/flutter-book/blob/master/doc/upday/bloc.md)
+
+既然它的目标是分离业务逻辑，一般情况下我们会把逻辑都移动到 Bloc 侧，但有时候会同一个 outInput 会有多个输出源去执行不同的逻辑，我们可以在数据结构上去做一些改动，比如：
+
+```dart
+class BlocData<T> {
+  final T data;
+  final String action;
+  final dynamic params;
+
+  BlocData(this.action, {
+    this.params,
+    this.data
+  });
+}
+```
+
+对于 Bloc 侧定义一些不同执行的方法包装起来，比如：
+
+```dart
+void toggleIndexCollections(int index){
+  _inputPhotoDirs.add(new BlocData(
+    ActionToggle,
+    params: index
+  ));
+}
+```
+
+最后在 Widget 中调用：
+
+```dart
+bloc.toggleIndexCollections(index);
+```
+
+源码例子参考：[https://github.com/icepy/flutter-dress/blob/dev/lib/bloc/DressPhotoDirsBlocData.dart](https://github.com/icepy/flutter-dress/blob/dev/lib/bloc/DressPhotoDirsBlocData.dart) 和 [https://github.com/icepy/flutter-dress/blob/dev/lib/pages/dress_photos_page.dart](https://github.com/icepy/flutter-dress/blob/dev/lib/pages/dress_photos_page.dart)
+
+这种方式其实和 redux 的设计有一些像，当你的 Action 特别多的时候，就会感觉到很啰嗦。
+
+在业务层面，我们应该遵循的设计大家可以借鉴参考一下：
+
+- 在 App 的顶层通过 `ApplicationBloc` 来管理整个 App 的状态
+- 每一个业务页面都应该有它自己的 `Bloc`
+- 当一个 Widget 封装的足够复杂时，它也应该有自己的 `Bloc`
+- 对于 stream 的运用可以多遵循其本身方法，比如 map where 等
+
+
+```dart
+FavoriteMovieBloc(MovieCard movieCard){
+  _favoritesController.stream
+                      .map((list) => list.any((MovieCard item) => item.id == movieCard.id))
+                      .listen((isFavorite) => _isFavoriteController.add(isFavorite));
+}
+```
